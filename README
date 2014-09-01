@@ -147,9 +147,11 @@ interface-bench.lisp.
 
 4. Other notes
 
-The package also has a handy utility function called CALLING-FORM. It solves the following problem:
+The package also has a handy utility function called CALLING-FORM. It
+solves the following problem:
 
-Consider a function F with a lambda list (L...). How can we write a function G
+Consider a function F with a lambda list (L...). How can we write a
+function G
 
     (defun G (L...)
       <???>)
