@@ -219,6 +219,10 @@
   ;; of them has conforming lambda lists.
   `(defparameter
     ,name
-    (,(interface-implementation-constructor-name intf-name)
-     ,@implementations)))
+     (,(interface-implementation-constructor-name intf-name)
+      ,@implementations
+      #+#:ignore                        ; Alternative syntax.
+      (loop :for (fn-name . args-body) :in implementations
+            :collect (alexandria:make-keyword fn-name)
+            :collect (cons 'cl:lambda args-body)))))
 
