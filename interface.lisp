@@ -172,14 +172,35 @@
                          (symbol-name slot))))
   
   (defun interface-implementation-constructor-name (intf-name)
-    (intern (format nil "MAKE-~A-IMPLEMENTATION" intf-name))))
+    (intern (format nil "MAKE-~A-IMPLEMENTATION" intf-name)))
+  
+  (defun interface-function-specification-p (spec)
+    (and (listp spec)
+         (symbolp (first spec))
+         (listp (second spec))))
+  
+  (defun interface-value-specification-p (spec)
+    (symbolp spec))
+  
+  (defun interface-specification-p (spec)
+    (or (interface-function-specification-p spec)
+        (interface-value-specification-p spec))))
 
-(defmacro define-interface (name args &body specs)
+(defmacro define-interface (name options &body specs)
+  "Define an interface whose name is NAME and list of options are OPTIONS. (Currently, no options are supported.) The body of the definition should be a list of \"interface specifications\". An interface specification is:
+
+    * A list containing a function name as the first element and the
+      lambda list as the second element.
+
+    * A symbol representing a constant value."
   (check-type name symbol)
-  (assert (null args))
+  (assert (null options) (options) "Currently, no options to DEFINE-INTERFACE are supported.")
+  (assert (every #'interface-specification-p specs) (specs) "Not every specification is valid.")
   (let ((intf (gensym "IMPL-"))
         (conc-name (interface-conc-name name)))
     `(progn
+       ;; Generate the structure holding all of the interface
+       ;; functions and values.
        (defstruct (,name (:conc-name ,(intern conc-name))
                          (:constructor ,(interface-implementation-constructor-name name))
                          (:print-function (lambda (obj stream depth)
@@ -189,25 +210,43 @@
                          (:copier nil)
                          (:predicate nil))
          ,@(loop :for spec :in specs
-                 :collect `(,(first spec)
-                            (error  ,(format nil "Required implementation for ~A in the ~A interface." (first spec) name))
-                            :read-only t
-                            :type function)))
+                 :if (interface-function-specification-p spec)
+                   :collect `(,(first spec)
+                              (error ,(format nil "Required implementation for the function ~A in the ~A interface." (first spec) name))
+                              :read-only t
+                              :type function)
+                 :else
+                   :if (interface-value-specification-p spec)
+                     :collect `(,spec
+                                (error ,(format nil "Required implementation for the value ~A in the ~A interface." spec name))
+                                :read-only t
+                                :type t)))
        
-       ;; function definitions
+       ;; Generate the shell function definitions (which will be
+       ;; declaimed as INLINE).
        ,@(loop :for spec :in specs
-               :append
-               (destructuring-bind (fn-name (&rest lambda-list) &rest rest)
-                   spec
-                 (declare (ignore rest))
-                 `(;progn
-                   (declaim (inline ,fn-name))
-                   (defun ,fn-name (,intf ,@lambda-list)
-                     ;;(declare (dynamic-extent ,intf))
-                     ,(calling-form `(the function
-                                          (,(interface-accessor name fn-name)
-                                           ,intf))
-                                    lambda-list)))))
+               :if (interface-function-specification-p spec)
+                 :append
+                 (destructuring-bind (fn-name (&rest lambda-list) &rest rest)
+                     spec
+                   (declare (ignore rest))
+                   `(;progn
+                     (declaim (inline ,fn-name))
+                     (defun ,fn-name (,intf ,@lambda-list)
+                       ;;(declare (dynamic-extent ,intf))
+                       ,(calling-form `(the function
+                                            (,(interface-accessor name fn-name)
+                                             ,intf))
+                                      lambda-list))))
+                 :else
+                   :if (interface-value-specification-p spec)
+                     :append
+                     (let ((val-name spec))
+                       `(;progn
+                         (declaim (inline ,val-name))
+                         (defun ,val-name (,intf)
+                           ;;(declare (dynamic-extent ,intf))
+                           (,(interface-accessor name val-name) ,intf)))))
        ',name)))
 
 (defmacro define-implementation (name (intf-name) &body implementations)

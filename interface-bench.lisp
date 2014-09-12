@@ -1,5 +1,7 @@
 (declaim (optimize speed (safety 0) (debug 0)))
 
+(use-package :interface)
+
 (defclass clos-stack () ())
 (defgeneric clos-make-stack (impl))
 (defgeneric clos-push-stack (impl s x))
@@ -149,3 +151,14 @@
 ;;        271,791 microseconds (0.271791 seconds) were spent in system mode
 ;;  1,600,000,013 bytes of memory allocated.
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;; Random Tests ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-interface group ()
+  group-identity
+  (group-plus (a b)))
+
+(define-implementation additive-integer-group (group)
+  :group-identity 0
+  :group-plus
+  (lambda (a b) (+ a b)))
