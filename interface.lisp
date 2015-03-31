@@ -169,10 +169,20 @@
   (defun interface-accessor (intf-name slot)
     (intern (concatenate 'string
                          (interface-conc-name intf-name)
-                         (symbol-name slot))))
+                         (symbol-name slot))
+            (symbol-package intf-name)))
   
-  (defun interface-implementation-constructor-name (intf-name)
-    (intern (format nil "MAKE-~A-IMPLEMENTATION" intf-name)))
+  (defun interface-implementation-constructor-name (intf-name &optional (package nil package-supplied-p))
+    (let ((symbol-name (format nil "MAKE-~A-IMPLEMENTATION" intf-name))
+          (intf-package (symbol-package intf-name)))
+      (if (and package-supplied-p (null package))
+          (intern symbol-name intf-package)
+          (multiple-value-bind (symbol found?)
+              (find-symbol symbol-name intf-package)
+            (if found?
+                symbol
+                (error "Apparently unknown interface ~S. Did you get the ~
+                  package correct?" intf-name))))))
   
   (defun interface-function-specification-p (spec)
     (and (listp spec)
@@ -202,7 +212,7 @@
        ;; Generate the structure holding all of the interface
        ;; functions and values.
        (defstruct (,name (:conc-name ,(intern conc-name))
-                         (:constructor ,(interface-implementation-constructor-name name))
+                         (:constructor ,(interface-implementation-constructor-name name nil))
                          (:print-function (lambda (obj stream depth)
                                             (declare (ignore depth))
                                             (print-unreadable-object (obj stream :type t :identity t)
