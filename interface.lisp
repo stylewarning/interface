@@ -266,7 +266,7 @@
   ;; implemented, but it happens when trying to call the
   ;; implementation constructor.) We could also ensure that every one
   ;; of them has conforming lambda lists.
-  `(defparameter
+  `(global-vars:define-global-parameter*
     ,name
      (,(interface-implementation-constructor-name intf-name)
       ,@implementations
