@@ -1,6 +1,9 @@
 (declaim (optimize speed (safety 0) (debug 0)))
 
-(use-package :interface)
+(defpackage #:interface-bench
+  (:use #:cl #:interface))
+
+(in-package #:interface-bench)
 
 (defclass clos-stack () ())
 (defgeneric clos-make-stack (impl))
