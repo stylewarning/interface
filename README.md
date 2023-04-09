@@ -1,9 +1,8 @@
-                              INTERFACE
-                              =========
+# INTERFACE
 
-                           By Robert Smith
+By Robert Smith
 
-1. Introduction
+## Introduction
 
 This system contains an implementation of interfaces and
 implementations. They're sometimes called protocols in other
@@ -31,28 +30,30 @@ be the final subclass along with method definitions.
 
 For example:
 
-    (defclass stack () ())
-    (defgeneric make-stack (impl))
-    (defgeneric stack-push (impl s x))
-    (defgeneric stack-pop (impl s))
-    (defgeneric stack-peek (impl s))
+```lisp
+(defclass stack () ())
+(defgeneric make-stack (impl))
+(defgeneric stack-push (impl s x))
+(defgeneric stack-pop (impl s))
+(defgeneric stack-peek (impl s))
 
-    (defclass list-stack (stack) ())
-    (defmethod make-stack ((impl list-stack))
-      nil)
-    (defmethod stack-push ((impl list-stack) s x)
-      (cons x s))
-    (defmethod stack-pop ((impl list-stack) s)
-      (cdr s))
-    (defmethod stack-peek ((impl list-stack) s)
-      (car s))
+(defclass list-stack (stack) ())
+(defmethod make-stack ((impl list-stack))
+  nil)
+(defmethod stack-push ((impl list-stack) s x)
+  (cons x s))
+(defmethod stack-pop ((impl list-stack) s)
+  (cdr s))
+(defmethod stack-peek ((impl list-stack) s)
+  (car s))
+```
 
 This is mostly sufficient, though Lisp makes no guarantee that a class
 will have any set of methods defined for it. (One could perhaps use
 the MOP for this.) One can "optimize" implementations by conflating
 the notion of an implementation with the actual data structure being
 implemented, and make it a part of the implementation class. In this
-case, we could have a slot in LIST-STACK holding the list.
+case, we could have a slot in `LIST-STACK` holding the list.
 
 Since methods are not tied to classes, this implementation allows one
 to have a class implement several methods. Also, it is entirely
@@ -60,8 +61,7 @@ possible to do away with the superclass; that is a formality tying all
 implementations to a particular interface with a name.
 
 As I understand, this basic notion is taken to the extreme with Fare's
-Lisp Interface Library (http://www.cliki.net/lisp-interface-library).
-
+[Lisp Interface Library](http://www.cliki.net/lisp-interface-library).
 
 In this system, however, we take a different approach
 entirely. Instead of using a class to represent interfaces and
@@ -80,8 +80,9 @@ the slots of the structure. It also forces data structures and the
 interface to be completely disjoint entities.
 
 
-2. Example
+## Example
 
+```lisp
 (define-interface stack ()
   (make-stack (&rest r))
   (push-stack (s x))
@@ -138,26 +139,31 @@ interface to be completely disjoint entities.
 ;;;                                 (make-stack list-stack 1 2 3)
 ;;;                                 5))
 ;;; (1 2 3)
+```
 
-3. Performance
+## Performance
 
 This implementation has been measured to be between 10% and 30% faster
 than the classes approach described above. See the file
-interface-bench.lisp.
+`interface-bench.lisp`.
 
-4. Other notes
+## Other notes
 
-The package also has a handy utility function called CALLING-FORM. It
-solves the following problem:
+The package also has a handy utility function called
+`CALLING-FORM`. It solves the following problem:
 
-Consider a function F with a lambda list (L...). How can we write a
-function G
+Consider a function `F` with a lambda list `(L...)`. How can we write
+a function `G`
 
-    (defun G (L...)
-      <???>)
+```lisp
+(defun G (L...)
+  <???>)
+```
 
-such that calls to G are precisely equivalent to F? We can use
+such that calls to `G` are precisely equivalent to `F`? We can use
 
-    (calling-form 'f '(L...))
+```lisp
+(calling-form 'f '(L...))
+```
 
-which will produce code which is suitable for the definition of G.
+which will produce code which is suitable for the definition of `G`.
